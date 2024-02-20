@@ -1,0 +1,142 @@
+import random
+import tkinter as tk
+from tkinter import messagebox
+from tkinter import ttk
+
+class JogoAdivinhacaoGUI:
+    def __init__(self, master):
+        self.master = master
+        master.title("Jogo de Adivinhação")
+        master.configure(bg="purple")
+
+        self.label = tk.Label(master, text="Escolha a dificuldade:", font=("Helvetica", 14), bg="purple", fg="white")
+        self.label.grid(row=0, column=0, columnspan=3, pady=10)
+
+        self.dificuldades = [
+            ("Fácil", 1),
+            ("Médio", 2),
+            ("Difícil", 3)
+        ]
+
+        self.escolha_var = tk.IntVar()
+        style = ttk.Style()
+        style.configure("Neon.TButton", foreground="green", background="black")
+
+        for i, (dificuldade, valor) in enumerate(self.dificuldades):
+            rb = ttk.Radiobutton(master, text=dificuldade, variable=self.escolha_var, value=valor, style="Neon.TButton")
+            rb.grid(row=1, column=i, padx=5)
+
+        self.iniciar_button = ttk.Button(master, text="Iniciar", command=self.iniciar_jogo, style="Neon.TButton")
+        self.iniciar_button.grid(row=2, column=0, columnspan=3, pady=10)
+
+        # Centralizar os widgets na janela
+        for i in range(3):
+            master.grid_columnconfigure(i, weight=1)
+        master.grid_rowconfigure(0, weight=1)
+        master.grid_rowconfigure(1, weight=1)
+
+        # Inicializar variáveis de controle
+        self.jogo_aberto = False
+        self.numero_secreto = None
+        self.tentativas_max = None
+
+    def iniciar_jogo(self):
+        dificuldade = self.escolha_var.get()
+
+        if dificuldade == 0:
+            messagebox.showerror("Erro", "Por favor, escolha uma dificuldade.")
+            return
+
+        if not self.jogo_aberto:
+            self.abrir_janela_jogo(dificuldade)
+        else:
+            self.atualizar_jogo(dificuldade)
+
+    def abrir_janela_jogo(self, dificuldade):
+        self.master.withdraw()  # Esconder a janela principal
+
+        self.jogo_window = tk.Toplevel(self.master)
+        self.jogo_window.title("Jogo de Adivinhação")
+        self.jogo_window.configure(bg="purple")
+
+        # Obter as dimensões da janela principal
+        largura, altura = self.master.winfo_width(), self.master.winfo_height()
+
+        # Definir as dimensões da janela do jogo semelhante à janela principal
+        self.jogo_window.geometry(f"{largura}x{altura}")
+
+        if dificuldade == 1:
+            self.numero_secreto = random.randint(1, 20)
+            self.tentativas_max = 10
+        elif dificuldade == 2:
+            self.numero_secreto = random.randint(1, 50)
+            self.tentativas_max = 7
+        else:
+            self.numero_secreto = random.randint(1, 100)
+            self.tentativas_max = 5
+
+        self.label_jogo = tk.Label(self.jogo_window, text="Adivinhe o número secreto!", font=("Helvetica", 14), bg="purple", fg="white")
+        self.label_jogo.pack(pady=10)
+
+        self.tentativas_label = tk.Label(self.jogo_window, text=f"Tentativas restantes: {self.tentativas_max}", font=("Helvetica", 12), bg="purple", fg="white")
+        self.tentativas_label.pack()
+
+        self.entry_palpite = tk.Entry(self.jogo_window, font=("Helvetica", 12))
+        self.entry_palpite.pack(pady=10)
+        self.entry_palpite.bind("<Return>", lambda event: self.verificar_palpite())
+
+        self.palpite_button = ttk.Button(self.jogo_window, text="Palpite", command=self.verificar_palpite, style="Neon.TButton")
+        self.palpite_button.pack()
+
+        self.jogo_window.protocol("WM_DELETE_WINDOW", self.fechar_jogo)
+        self.jogo_window.bind("<Return>", lambda event: self.verificar_palpite())
+
+        self.jogo_aberto = True
+
+    def atualizar_jogo(self, dificuldade):
+        if dificuldade == 1:
+            self.numero_secreto = random.randint(1, 20)
+            self.tentativas_max = 10
+        elif dificuldade == 2:
+            self.numero_secreto = random.randint(1, 50)
+            self.tentativas_max = 7
+        else:
+            self.numero_secreto = random.randint(1, 100)
+            self.tentativas_max = 5
+
+        self.label_jogo.config(text="Adivinhe o número secreto!")
+        self.tentativas_label.config(text=f"Tentativas restantes: {self.tentativas_max}")
+        self.entry_palpite.delete(0, tk.END)
+
+    def verificar_palpite(self, event=None):
+        palpite = self.entry_palpite.get()
+
+        if not palpite.isdigit():
+            messagebox.showerror("Erro", "Por favor, insira um número válido.")
+            return
+
+        palpite = int(palpite)
+
+        if palpite == self.numero_secreto:
+            messagebox.showinfo("Parabéns", f"Você acertou o número secreto {self.numero_secreto}!")
+            self.atualizar_jogo(self.escolha_var.get())
+        elif palpite < self.numero_secreto:
+            messagebox.showinfo("Dica", "O número secreto é maior.")
+        else:
+            messagebox.showinfo("Dica", "O número secreto é menor.")
+
+        self.tentativas_max -= 1
+        self.tentativas_label.config(text=f"Tentativas restantes: {self.tentativas_max}")
+
+        if self.tentativas_max == 0:
+            messagebox.showinfo("Fim do Jogo", f"Suas {self.tentativas_max} tentativas acabaram. O número secreto era {self.numero_secreto}.")
+            self.atualizar_jogo(self.escolha_var.get())
+
+    def fechar_jogo(self):
+        self.jogo_window.destroy()  # Fechar a janela do jogo
+        self.master.deiconify()  # Mostrar a janela principal
+
+root = tk.Tk()
+root.geometry("400x300")  # Definindo o tamanho da janela principal para 400x300 pixels
+app = JogoAdivinhacaoGUI(root)
+root.mainloop()
